@@ -1,0 +1,86 @@
+package com.payments.wise_split.service;
+
+import com.payments.wise_split.dto.PaymentRequestDto;
+import com.payments.wise_split.dto.PaymentRequestResponseDto;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+
+@Service
+public class PaymentRequestService {
+
+    @Autowired
+    private final JavaMailSender mailSender;
+
+    PaymentRequestService(JavaMailSender mailSender){
+        this.mailSender = mailSender;
+    }
+
+    @Value("${app.domain.name}")
+    private String domain;
+
+    public PaymentRequestResponseDto requestPayment(PaymentRequestDto req){
+        String[] data = req.getText().split("\n");
+        String amount = data[2].replaceAll("[^0-9.]", "");
+        Double actualAmount = Double.parseDouble(amount)/2;
+        String company = data[1];
+        requestMoneyFromDebtor(req.getReceiverUpiId(),
+                                req.getDebtorName(),
+                                req.getDebtorEmail(),
+                                req.getReceiverName(),
+                                actualAmount,
+                                company);
+        PaymentRequestResponseDto res = PaymentRequestResponseDto.builder()
+                .message(amount + " has been sent to you please verify")
+                .success(true)
+                .amountSent(amount)
+                .build();
+        return res;
+    }
+
+    private void requestMoneyFromDebtor(String receiverUpiId,
+                                        String debtorName,
+                                        String debtorEmail,
+                                        String receiverName,
+                                        Double amount,
+                                        String company){
+        try{
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            String emailTemplate = emailTemplateLoader("template.html");
+
+            String finalEmail = emailTemplate.replace("{{debtorName}}", debtorName)
+                    .replace("{{amount}}", amount.toString())
+                    .replace("{{receiverUpiId}}", receiverUpiId)
+                    .replace("{{for}}", company)
+                    .replace("{{receiverName", receiverName)
+                    .replace("{{domain}}", domain);
+
+            helper.setTo(debtorEmail);
+            helper.setSubject("Payment Request");
+            helper.setText(finalEmail, true);  // true = enable HTML
+
+            mailSender.send(message);
+
+        }catch (Exception e){
+            throw new RuntimeException("Failed to send email", e);
+        }
+    }
+
+    private String emailTemplateLoader(String fileName){
+        try{
+            var resource = new ClassPathResource("templates/" + fileName);
+            byte[] bytes = Files.readAllBytes(resource.getFile().toPath());
+            return new String(bytes, StandardCharsets.UTF_8);
+        }catch (Exception e){
+            throw new RuntimeException("Failed to load email template" + fileName, e);
+        }
+    }
+}

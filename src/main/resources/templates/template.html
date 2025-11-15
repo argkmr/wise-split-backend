@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email</title>
+    <style>
+        body {
+            background-color: #eef1f5;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 520px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 35px 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.07);
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2e2e2e;
+            text-align: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        p {
+            color: #444;
+            line-height: 1.65;
+            font-size: 15px;
+            margin-top: 18px;
+        }
+
+        .highlight {
+            font-weight: 600;
+            color: #000;
+        }
+
+        .link-box {
+            background: #f7f9fc;
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-top: 18px;
+            word-break: break-all;
+            border-left: 4px solid #4a7aff;
+            font-size: 14px;
+        }
+
+        .footer {
+            margin-top: 35px;
+            font-size: 13px;
+            color: #8d8d8d;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="title">Payment Request</div>
+
+    <p>
+        Hi <span class="highlight">{{debtorName}}</span>,
+        <br><br>
+        You have received a payment request from
+        <span class="highlight">Anurag Kumar</span>
+        for an amount of
+        <span class="highlight">₹{{amount}}</span>.
+        <br><br>
+        Please complete the payment at your earliest convenience by clicking the link below:
+    </p>
+
+    <div class="link-box">
+        <a href="http://{{domain}}/redirect?link=gpay://upi/pay?pa={{receiverUpiId}}&pn={{receiverName}}&am={{amount}}&cu=INR&tn={{for}}">
+            Click here to pay in GPay (only for mobile)
+        </a>
+    </div>
+
+
+    <p class="footer">
+        Best Regards,<br>
+        Anurag Kumar
+    </p>
+</div>
+</body>
+</html>
