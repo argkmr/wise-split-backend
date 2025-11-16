@@ -10,8 +10,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.util.Objects;
 
 @Service
 public class PaymentRequestService {
@@ -25,6 +26,12 @@ public class PaymentRequestService {
 
     @Value("${app.domain.name}")
     private String domain;
+
+    @Value("${app.domain.port}")
+    private String port;
+
+    @Value("${app.environment}")
+    private String env;
 
     public PaymentRequestResponseDto requestPayment(PaymentRequestDto req){
         String[] data = req.getText().split("\n");
@@ -56,12 +63,24 @@ public class PaymentRequestService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             String emailTemplate = emailTemplateLoader("template.html");
 
+            String gpayLink = "gpay://upi/pay?pa=" + receiverUpiId +
+                    "&pn=" + receiverName +
+                    "&am=" + amount +
+                    "&cu=INR" +
+                    "&tn=" + company;
+
+            String encodedGpayLink = URLEncoder.encode(gpayLink, StandardCharsets.UTF_8);
+
+            String devRedirectLink = String.format("http://%s:%s/api/payment/redirect?link=%s", domain, port, encodedGpayLink);
+            String prodRedirectLink = String.format("http://%s/api/payment/redirect?link={{%s}}", domain, encodedGpayLink);
+
             String finalEmail = emailTemplate.replace("{{debtorName}}", debtorName)
                     .replace("{{amount}}", amount.toString())
                     .replace("{{receiverUpiId}}", receiverUpiId)
                     .replace("{{for}}", company)
-                    .replace("{{receiverName", receiverName)
-                    .replace("{{domain}}", domain);
+                    .replace("{{receiverName}}", receiverName)
+                    .replace("{{redirectLink}}", Objects.equals(env, "PROD") ? prodRedirectLink : devRedirectLink );
+
 
             helper.setTo(debtorEmail);
             helper.setSubject("Payment Request");
@@ -76,9 +95,8 @@ public class PaymentRequestService {
 
     private String emailTemplateLoader(String fileName){
         try{
-            var resource = new ClassPathResource("templates/" + fileName);
-            byte[] bytes = Files.readAllBytes(resource.getFile().toPath());
-            return new String(bytes, StandardCharsets.UTF_8);
+            ClassPathResource resource = new ClassPathResource("templates/" + fileName);
+            return new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         }catch (Exception e){
             throw new RuntimeException("Failed to load email template" + fileName, e);
         }

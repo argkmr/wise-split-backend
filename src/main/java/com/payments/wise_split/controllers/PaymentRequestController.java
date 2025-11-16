@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Controller
 @RequestMapping("/api/payment")
@@ -31,11 +32,12 @@ public class PaymentRequestController {
 
     @GetMapping("/redirect")
     public void redirectToGpay(@RequestParam String link, HttpServletResponse response) throws IOException {
+        String decodedLink = java.net.URLDecoder.decode(link, StandardCharsets.UTF_8);
         response.setContentType("text/html");
         response.getWriter().write(
                 "<html><body>" +
                         "<p>Redirecting to payment…</p>" +
-                        "<script>window.location.href = '" + link + "';</script>" +
+                        "<script>window.location.href = '" + decodedLink + "';</script>" +
                         "</body></html>"
         );
     }
