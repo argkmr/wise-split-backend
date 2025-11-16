@@ -64,7 +64,7 @@ public class PaymentRequestService {
 
             String encodedGpayLink = URLEncoder.encode(gpayLink, StandardCharsets.UTF_8);
 
-            String redirectLink = String.format("%s/api/payment/redirect?link={{%s}}", domain, encodedGpayLink);
+            String redirectLink = String.format("%s/api/payment/redirect?link=%s", domain, encodedGpayLink);
 
             String finalEmail = emailTemplate.replace("{{debtorName}}", debtorName)
                     .replace("{{amount}}", amount.toString())
